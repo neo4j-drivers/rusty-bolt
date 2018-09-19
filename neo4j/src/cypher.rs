@@ -2,7 +2,6 @@ use std::collections::{HashMap, VecDeque};
 
 use bolt::{BoltStream, BoltSummary};
 
-extern crate packstream;
 use packstream::values::{Value, Data};
 
 const USER_AGENT: &'static str = "rusty-bolt/0.1.0";

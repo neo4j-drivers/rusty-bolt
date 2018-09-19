@@ -48,6 +48,12 @@ impl Packer {
                     self.pack(&field);
                 }
             },
+            &Value::Message { signature, ref fields } => {
+                self.pack_structure_header(fields.len(), signature);
+                for field in fields {
+                    self.pack(&field);
+                }
+            },
         }
     }
 
@@ -290,6 +296,14 @@ impl Unpacker {
         }
     }
 
+    pub fn unpack_top(&mut self) -> Value {
+        let marker = self.unpack_u8();
+        match marker {
+            0xB0...0xBF => self.unpack_message((marker & 0x0F) as usize),
+            _ => panic!("Illegal top level value with marker {:02X}", marker),
+        }
+    }
+
     fn unpack_string(&mut self, size: usize) -> Value {
         let end_offset = self.unpack_ptr + size;
         let value = String::from_utf8_lossy(&self.buffer[self.unpack_ptr..end_offset]).into_owned();
@@ -326,6 +340,21 @@ impl Unpacker {
             fields.push(self.unpack());
         }
         Value::Structure { signature: signature, fields: fields }
+    }
+
+    fn unpack_message(&mut self, size: usize) -> Value {
+        let signature: u8 = self.unpack_u8();
+        let mut fields: Vec<Value> = vec!();
+        for _ in 0..size {
+            fields.push(self.unpack());
+        }
+        match signature {
+            0x71 => match fields.len() {
+                1 => fields.remove(0),
+                _ => Value::Null,
+            },
+            _ => Value::Message { signature: signature, fields: fields },
+        }
     }
 
     fn unpack_u8(&mut self) -> u8 {

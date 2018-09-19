@@ -5,7 +5,6 @@ use std::io::prelude::*;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::result;
 
-extern crate packstream;
 use packstream::{Packer, Unpacker};
 use packstream::values::{Value, Data};
 
@@ -249,7 +248,7 @@ impl BoltStream {
     }
 
     fn read_chunk_size(&mut self) -> usize {
-        let mut chunk_header = &mut [0u8; 2];
+        let chunk_header = &mut [0u8; 2];
         let _ = self.stream.read_exact(chunk_header);
 //        log_line!("S: [{:02X} {:02X}]", chunk_header[0] as u8, chunk_header[1] as u8);
         0x100 * chunk_header[0] as usize + chunk_header[1] as usize
@@ -259,37 +258,26 @@ impl BoltStream {
     ///
     fn fetch(&mut self) {
         self.receive();
-        let mut response = self.responses.get_mut(self.current_response_index).unwrap();
-        match self.unpacker.unpack() {
-            Value::Structure { signature, mut fields } => match signature {
+        let response = self.responses.get_mut(self.current_response_index).unwrap();
+        match self.unpacker.unpack_top() {
+            Value::List(data) => {
+                debug!("S: {:?}", data);
+                response.detail.push_back(Data::Record(data));
+            },
+            Value::Message { signature, mut fields } => match signature {
                 0x70 => {
                     self.current_response_index += 1;
                     match fields.len() {
                         0 => {
-                            debug!("S: SUCCESS {{}}");
+                            debug!("S: SUCCESS({{}})");
                             response.summary = Some(BoltSummary::Success(HashMap::new()));
                         },
                         _ => match fields.remove(0) {
                             Value::Map(metadata) => {
-                                debug!("S: SUCCESS {:?}", metadata);
+                                debug!("S: SUCCESS({:?})", metadata);
                                 response.summary = Some(BoltSummary::Success(metadata));
                             },
                             _ => panic!("Non-map metadata"),
-                        },
-                    }
-                },
-                0x71 => {
-                    match fields.len() {
-                        0 => {
-                            debug!("S: RECORD {{}}");
-                            response.detail.push_back(Data::Record(Vec::new()));
-                        },
-                        _ => match fields.remove(0) {
-                            Value::List(data) => {
-                                debug!("S: RECORD {:?}", data);
-                                response.detail.push_back(Data::Record(data));
-                            },
-                            _ => panic!("Non-list data"),
                         },
                     }
                 },
@@ -297,12 +285,12 @@ impl BoltStream {
                     self.current_response_index += 1;
                     match fields.len() {
                         0 => {
-                            debug!("S: IGNORED {{}}");
+                            debug!("S: IGNORED({{}})");
                             response.summary = Some(BoltSummary::Ignored(HashMap::new()));
                         },
                         _ => match fields.remove(0) {
                             Value::Map(metadata) => {
-                                debug!("S: IGNORED {:?}", metadata);
+                                debug!("S: IGNORED({:?})", metadata);
                                 response.summary = Some(BoltSummary::Ignored(metadata));
                             },
                             _ => panic!("Non-map metadata"),
@@ -313,12 +301,12 @@ impl BoltStream {
                     self.current_response_index += 1;
                     match fields.len() {
                         0 => {
-                            debug!("S: FAILURE {{}}");
+                            debug!("S: FAILURE({{}})");
                             response.summary = Some(BoltSummary::Failure(HashMap::new()));
                         },
                         _ => match fields.remove(0) {
                             Value::Map(metadata) => {
-                                debug!("S: FAILURE {:?}", metadata);
+                                debug!("S: FAILURE({:?})", metadata);
                                 response.summary = Some(BoltSummary::Failure(metadata));
                             },
                             _ => panic!("Non-map metadata"),
@@ -327,7 +315,7 @@ impl BoltStream {
                 },
                 _ => panic!("Unknown response message with signature {:02X}", signature),
             },
-            _ => panic!("Response message is not a structure"),
+            _ => panic!("Response message is not a data or a summary"),
         }
     }
 

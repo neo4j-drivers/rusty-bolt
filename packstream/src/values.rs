@@ -12,6 +12,7 @@ pub enum Value {
     List(Vec<Value>),
     Map(HashMap<String, Value>),
     Structure { signature: u8, fields: Vec<Value> },
+    Message { signature: u8, fields: Vec<Value> },
 }
 
 impl fmt::Debug for Value {
@@ -25,6 +26,7 @@ impl fmt::Debug for Value {
             Value::List(ref values) => write!(f, "{:?}", values),
             Value::Map(ref values) => write!(f, "{:?}", values),
             Value::Structure { signature, ref fields } => write!(f, "#{:02X} {:?}", signature, fields),
+            Value::Message { signature, ref fields } => write!(f, "Message<#{:02X}> {:?}", signature, fields),
         }
     }
 }
