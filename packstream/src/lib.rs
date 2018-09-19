@@ -35,7 +35,7 @@ impl Packer {
                     self.pack(item);
                 }
             },
-            &Value::Map(ref items) => {
+            &Value::Dictionary(ref items) => {
                 self.pack_map_header(items.len());
                 for (key, value) in items {
                     self.pack_string(&key[..]);
@@ -330,7 +330,7 @@ impl Unpacker {
                 _ => panic!("Key is not a string"),
             }
         }
-        Value::Map(value)
+        Value::Dictionary(value)
     }
 
     fn unpack_structure(&mut self, size: usize) -> Value {

@@ -273,7 +273,7 @@ impl BoltStream {
                             response.summary = Some(BoltSummary::Success(HashMap::new()));
                         },
                         _ => match fields.remove(0) {
-                            Value::Map(metadata) => {
+                            Value::Dictionary(metadata) => {
                                 debug!("S: SUCCESS({:?})", metadata);
                                 response.summary = Some(BoltSummary::Success(metadata));
                             },
@@ -289,7 +289,7 @@ impl BoltStream {
                             response.summary = Some(BoltSummary::Ignored(HashMap::new()));
                         },
                         _ => match fields.remove(0) {
-                            Value::Map(metadata) => {
+                            Value::Dictionary(metadata) => {
                                 debug!("S: IGNORED({:?})", metadata);
                                 response.summary = Some(BoltSummary::Ignored(metadata));
                             },
@@ -305,7 +305,7 @@ impl BoltStream {
                             response.summary = Some(BoltSummary::Failure(HashMap::new()));
                         },
                         _ => match fields.remove(0) {
-                            Value::Map(metadata) => {
+                            Value::Dictionary(metadata) => {
                                 debug!("S: FAILURE({:?})", metadata);
                                 response.summary = Some(BoltSummary::Failure(metadata));
                             },

@@ -10,7 +10,7 @@ pub enum Value {
     Float(f64),
     String(String),
     List(Vec<Value>),
-    Map(HashMap<String, Value>),
+    Dictionary(HashMap<String, Value>),
     Structure { signature: u8, fields: Vec<Value> },
     Message { signature: u8, fields: Vec<Value> },
 }
@@ -24,7 +24,7 @@ impl fmt::Debug for Value {
             Value::Float(ref value) => write!(f, "{:?}", value),
             Value::String(ref value) => write!(f, "{:?}", value),
             Value::List(ref values) => write!(f, "{:?}", values),
-            Value::Map(ref values) => write!(f, "{:?}", values),
+            Value::Dictionary(ref values) => write!(f, "{:?}", values),
             Value::Structure { signature, ref fields } => write!(f, "#{:02X} {:?}", signature, fields),
             Value::Message { signature, ref fields } => write!(f, "Message<#{:02X}> {:?}", signature, fields),
         }
@@ -208,7 +208,7 @@ impl ValueMatch for Value {
 
     fn is_map(&self) -> bool {
         match *self {
-            Value::Map(_) => true,
+            Value::Dictionary(_) => true,
             _ => false
         }
     }
