@@ -134,6 +134,13 @@ impl_ValueCast_to_List!(Vec<u16>);
 impl_ValueCast_to_List!(Vec<u32>);
 impl_ValueCast_to_List!(Vec<u64>);
 impl_ValueCast_to_List!(Vec<usize>);
+impl_ValueCast_to_List!(Vec<&str>);
+
+impl ValueCast for Vec<String> {
+    fn from(&self) -> Value {
+        Value::List(self.iter().map(|x| ValueCast::from(x)).collect::<Vec<Value>>())
+    }
+}
 
 impl<'t> ValueCast for &'t str {
     fn from(&self) -> Value {
