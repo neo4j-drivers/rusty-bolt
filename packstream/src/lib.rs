@@ -291,6 +291,14 @@ impl Unpacker {
                 let size: usize = self.unpack_u8() as usize;
                 self.unpack_string(size)
             },
+            0xD1 => {
+                let size: usize = self.unpack_u16() as usize;
+                self.unpack_string(size)
+            },
+            0xD2 => {
+                let size: usize = self.unpack_u32() as usize;
+                self.unpack_string(size)
+            },
             0xF0...0xFF => Value::Integer(marker as i64 - 0x100),
             _ => panic!("Illegal value with marker {:02X}", marker),
         }
@@ -391,13 +399,24 @@ impl Unpacker {
          self.unpack_u8() as i64
     }
 
+    fn unpack_u16(&mut self) -> u16 {
+        (self.unpack_u8() as u16) << 8 | self.unpack_u8() as u16
+    }
+
+    fn unpack_u32(&mut self) -> u32 {
+        (self.unpack_u8() as u32) << 24 |
+        (self.unpack_u8() as u32) << 16 |
+        (self.unpack_u8() as u32) << 8 |
+         self.unpack_u8() as u32
+    }
+
 }
 
 #[cfg(test)]
 mod tests {
 
     mod casting {
-        use super::super::*;
+        use super::super::values::*;
 
         #[test]
         fn should_cast_value_from_true() {
@@ -470,6 +489,7 @@ mod tests {
 
     mod packing {
         use super::super::*;
+        use super::super::values::*;
 
         #[test]
         fn should_pack_and_unpack_null() {
@@ -515,6 +535,35 @@ mod tests {
                 assert_eq!(value, Value::Integer(i as i64));
             }
         }
+
+        #[test]
+        fn should_pack_and_string_variants() {
+            for s in vec![
+                    "",
+                    "z",
+                    "xxxxxxxxxxx",
+                    std::str::from_utf8(&[b'A'; 255]).unwrap(),
+                    std::str::from_utf8(&[b'B'; 256]).unwrap(),
+                    std::str::from_utf8(&[b'C'; 65535]).unwrap(),
+                    std::str::from_utf8(&[b'D'; 65536]).unwrap()] {
+                // Given
+                let mut packer = Packer::new();
+
+                // When
+                packer.pack_string(s);
+
+                // And given
+                let mut unpacker = Unpacker::from_slice(&packer[..]);
+
+                // When
+                let value = unpacker.unpack();
+
+                // Then
+                assert!(ValueMatch::is_string(&value));
+                assert_eq!(value, Value::String(s.to_string()));
+            }
+        }
+
     }
 
 }
