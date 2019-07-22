@@ -103,8 +103,10 @@ impl Packer {
         }
     }
 
-    pub fn pack_float(&mut self, _: f64) {
-        // TODO
+    pub fn pack_float(&mut self, value: f64) {
+        self.write(0xC1);
+        let f64_bits = value.to_bits().to_be_bytes();
+        self.write_slice(&f64_bits);
     }
 
     pub fn pack_string(&mut self, value: &str) {
@@ -280,7 +282,7 @@ impl Unpacker {
             0xA0...0xAF => self.unpack_map((marker & 0x0F) as usize),
             0xB0...0xBF => self.unpack_structure((marker & 0x0F) as usize),
             0xC0 => Value::Null,
-            // TODO: C1
+            0xC1 => Value::Float(self.unpack_f64()),
             0xC2 => Value::Boolean(false),
             0xC3 => Value::Boolean(true),
             0xC8 => Value::Integer(self.unpack_i8() as i64),
@@ -391,6 +393,12 @@ impl Unpacker {
          self.unpack_u8() as i64
     }
 
+    fn unpack_f64(&mut self) -> f64 {
+        let mut bytes = [0; 8];
+        bytes.copy_from_slice(&self.buffer[self.unpack_ptr..self.unpack_ptr+8]);
+        self.unpack_ptr += 8;
+        f64::from_bits(u64::from_be_bytes(bytes))
+    }
 }
 
 #[cfg(test)]
@@ -514,6 +522,41 @@ mod tests {
                 // Then
                 assert!(ValueMatch::is_integer(&value));
                 assert_eq!(value, Value::Integer(i as i64));
+            }
+        }
+
+        #[test]
+        fn should_pack_and_unpack_floats_integer() {
+            for f in [0.0, -0.0, 1.0, 42.0, 3.987654e32, std::f64::NAN, std::f64::INFINITY, std::f64::NEG_INFINITY].iter() {
+                // Given
+                let mut packer = Packer::new();
+
+                // When
+                packer.pack_float(*f as f64);
+
+                // Then
+                assert_eq!(packer[..].len(), 9);
+
+                // And given
+                let mut unpacker = Unpacker::from_slice(&packer[..]);
+
+                // When
+                let value = unpacker.unpack();
+
+                // Then
+                assert!(ValueMatch::is_float(&value));
+
+                // And
+                if let Value::Float(f2) = value {
+                    if f.is_nan() {
+                        assert!(f2.is_nan());
+                    } else {
+                        assert!(! f2.is_nan());
+                        assert_eq!(*f, f2);
+                    }
+                } else {
+                    panic!("It is a float, but it isn't a float?");
+                }
             }
         }
     }
