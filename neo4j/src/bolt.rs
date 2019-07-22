@@ -129,7 +129,7 @@ impl BoltStream {
 
     /// Pack a RUN message.
     ///
-    pub fn pack_run(&mut self, statement: &str, parameters: HashMap<&str, Value>) {
+    pub fn pack_run(&mut self, statement: &str, parameters: Vec<(&str, Value)>) {
         debug!("C: RUN {:?} {:?}", statement, parameters);
         self.packer.pack_structure_header(2, 0x10);
         self.packer.pack_string(statement);
@@ -275,7 +275,7 @@ impl BoltStream {
                         _ => match fields.remove(0) {
                             Value::Dictionary(metadata) => {
                                 debug!("S: SUCCESS({:?})", metadata);
-                                response.summary = Some(BoltSummary::Success(metadata));
+                                response.summary = Some(BoltSummary::Success(metadata.into_iter().collect()));
                             },
                             _ => panic!("Non-map metadata"),
                         },
@@ -291,7 +291,7 @@ impl BoltStream {
                         _ => match fields.remove(0) {
                             Value::Dictionary(metadata) => {
                                 debug!("S: IGNORED({:?})", metadata);
-                                response.summary = Some(BoltSummary::Ignored(metadata));
+                                response.summary = Some(BoltSummary::Ignored(metadata.into_iter().collect()));
                             },
                             _ => panic!("Non-map metadata"),
                         },
@@ -307,7 +307,7 @@ impl BoltStream {
                         _ => match fields.remove(0) {
                             Value::Dictionary(metadata) => {
                                 debug!("S: FAILURE({:?})", metadata);
-                                response.summary = Some(BoltSummary::Failure(metadata));
+                                response.summary = Some(BoltSummary::Failure(metadata.into_iter().collect()));
                             },
                             _ => panic!("Non-map metadata"),
                         },

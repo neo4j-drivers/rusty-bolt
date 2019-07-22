@@ -22,7 +22,7 @@ impl log::Log for SimpleLogger {
 //////////////////////////////////////////////////////////////////////
 
 use std::env;
-use std::collections::{VecDeque, HashMap};
+use std::collections::VecDeque;
 
 extern crate neo4j;
 use neo4j::cypher::{CypherStream};
@@ -50,7 +50,7 @@ fn main() {
 
 }
 
-fn dump(mut cypher: CypherStream, statement: &str, parameters: HashMap<&str, Value>) {
+fn dump(mut cypher: CypherStream, statement: &str, parameters: Vec<(&str, Value)>) {
     // begin transaction
 //    cypher.begin_transaction(None);
 
