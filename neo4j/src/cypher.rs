@@ -118,7 +118,7 @@ impl CypherStream {
         self.bolt.compact_responses();
     }
 
-    pub fn run(&mut self, statement: &str, parameters: HashMap<&str, Value>) -> StatementResult {
+    pub fn run(&mut self, statement: &str, parameters: Vec<(&str, Value)>) -> StatementResult {
         self.bolt.pack_run(statement, parameters);
         self.bolt.pack_pull_all();
         let head = self.bolt.collect_response();

@@ -244,20 +244,17 @@ impl fmt::Display for Data {
 macro_rules! parameters(
     {} => {
         {
-            use std::collections::HashMap;
-
-            HashMap::new()
+            Vec::new()
         }
     };
 
     { $($key:expr => $value:expr),* } => {
         {
-            use std::collections::HashMap;
             use $crate::values::{Value, ValueCast};
 
-            let mut map : HashMap<&str, Value> = HashMap::new();
+            let mut map : Vec<(&str, Value)> = Vec::new();
             $(
-                map.insert($key, ValueCast::from(&$value));
+                map.push(($key, ValueCast::from(&$value)));
             )+;
 
             map
